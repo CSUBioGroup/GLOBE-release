@@ -32,7 +32,7 @@ All raw datasets used in our paper can be found in:
 
 * [Mouse Neocortex](https://github.com/jaydu1/VITAE)
 
-Data used in our experiments can be found in [`data`](data/).
+Some of data used in our experiments can be found in [`data`](data/). Complete data can be found in [`zenodo`](https://zenodo.org/record/6395618)
 
 ## Usage
 We provided some demos ([`Simulation, PBMC, Cell Line, Pancreas, Neocortex`](demo/)) to demonstrate usage of GLOBE. Following is a brief decription of usage of GLOBE. 
