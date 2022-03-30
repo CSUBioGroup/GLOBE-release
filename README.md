@@ -35,7 +35,7 @@ All raw datasets used in our paper can be found in:
 Data used in our experiments can be found in [`data`](data/).
 
 ## Usage
-We provided some demos ([`Simulation, PBMC, Cell Line, Pancreas, Neocortex`](demo/)) to demonstrate usage of GLOBE. Following is brief decription of usage of GLOBE. 
+We provided some demos ([`Simulation, PBMC, Cell Line, Pancreas, Neocortex`](demo/)) to demonstrate usage of GLOBE. Following is a brief decription of usage of GLOBE. 
 
 ### Build Dataset and Model
 ```Python
