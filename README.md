@@ -56,7 +56,7 @@ We provided some demos ([`Simulation, PBMC, Cell Line, Pancreas, Neocortex`](dem
     # init model
     globe = GLOBE(
             mode='unsupervised',    # default
-            exp_id='Pancreas_v1',   # used for create logs
+            exp_id='Pancreas_v1',   # used for creating logs
             gpu='0',              
         )
 
