@@ -55,11 +55,7 @@ We provided some demos ([`Simulation, PBMC, Cell Line, Pancreas, Neocortex`](dem
 
     # init model
     globe = GLOBE(
-<<<<<<< Updated upstream
-            mode='unsupervised',    # default
-=======
             mode='unsupervised-GLOBE',    # default
->>>>>>> Stashed changes
             exp_id='Pancreas_v1',   # used for creating logs
             gpu='0',              
         )
