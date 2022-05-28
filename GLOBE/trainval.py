@@ -80,20 +80,174 @@ def get_args():
 
 
 def supervised_train_one_epoch(train_loader, model, criterion, optimizer, epoch):
-    pass
-    # after publishment
+    model.train()
+
+    # recoders
+    loss_sum = 0
+    loss_avg = 0
+    step_count = 0
+    with tqdm(train_loader, unit="batch") as tepoch:
+        for batch in tepoch:
+            cells, types = batch[0].cuda(), batch[1].long().cuda()  # ce need longTensor target
+
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward + backward + optimize
+            emb = model(cells)
+            loss = criterion(emb, types)
+            loss.backward()
+            optimizer.step()
+
+            # update record
+            loss_sum += loss.detach().cpu().item()
+            step_count += 1
+            loss_avg = loss_sum / step_count
+
+            tepoch.set_postfix(loss=loss_avg)
+            
+    return loss_avg
 
 # only used for MNN+InfoNCE, damn it
 def supervised_train_one_epoch_withNCE(train_loader, model, criterion, optimizer, epoch):
-    # after publishment
-    pass 
+    model.train()
+
+    # recoders
+    loss_sum = 0
+    loss_avg = 0
+    step_count = 0
+    with tqdm(train_loader, unit="batch") as tepoch:
+        for batch, _ in tepoch:
+            cells_q, cells_k = batch[0].cuda(), batch[1].cuda()  
+
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward + backward + optimize
+            cells = torch.cat([cells_q, cells_k], dim=0) 
+            emb_2x = model(cells)
+
+            # reshape tensor
+            # (2*bsz, n_features) => (bsz, 2, features)
+            bsz = cells_q.shape[0]
+            f1, f2 = torch.split(emb_2x, [bsz, bsz], dim=0)  # (bsz, conhead_dim)
+            features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
+
+            loss = criterion(features)
+            loss.backward()
+            optimizer.step()
+
+            # update record
+            loss_sum += loss.detach().cpu().item()
+            step_count += 1
+            loss_avg = loss_sum / step_count
+
+            tepoch.set_postfix(loss=loss_avg)
+            
+    return loss_avg
 
 
 def unsupervised_train_one_epoch(pos_graph, view='double'):
-    # after publishment
-    pass  
+    def f(train_loader, model, criterion, optimizer, epoch):
+        model.train()
+
+        # recoders
+        step_count = 0
+        loss_sum = 0
+        loss_avg = 0
+
+        with tqdm(train_loader, unit="batch") as tepoch:
+            for cells, indices in tepoch:
+
+                '''
+                    single view will strech the indices 2X times, (like mnn diffusion), 
+                      double view as paper decribed
+                '''
+                indices = indices[0] if view=='single' \
+                                    else torch.cat([indices[0], indices[1]]) 
+
+                mask = torch.tensor(pos_graph[indices, :][:, indices].toarray()) # positive mask 
+
+                # formulate
+                cells1, cells2, mask = cells[0].cuda(), cells[1].cuda(), mask.float().cuda()
+                cells = torch.cat([cells1, cells2], dim=0) 
+
+                # forward 
+                emb_2x = model(cells)
+
+                # reshape tensor
+                # (2*bsz, n_features) => (bsz, 2, features)
+                bsz = cells1.shape[0]
+                f1, f2 = torch.split(emb_2x, [bsz, bsz], dim=0)  # (bsz, conhead_dim)
+                features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
+
+                loss = criterion(features, mask)  # (bsz, 2, conhead_dim)
+
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                # update record
+                step_count += 1
+                loss_sum += loss.cpu().item()
+                loss_avg = loss_sum / step_count
+
+                tepoch.set_postfix(loss=loss_avg)
+
+        return loss_avg
+
+    return f
 
 
 def unsupervised_train_one_epoch_withNCE(train_loader, model, criterion, optimizer, epoch):
-    # after publishment
-    pass 
+    model.train()
+
+    # recoders
+    step_count = 0
+    loss_sum = 0
+    loss_avg = 0
+
+    with tqdm(train_loader, unit="batch") as tepoch:
+        for cells, indices in tepoch:
+
+            '''
+                single view will strech the indices 2X times, (like mnn diffusion), 
+                  double view as paper decribed
+            '''
+            cells1, cells2 = cells[0].cuda(), cells[1].cuda()
+            cells = torch.cat([cells1, cells2], dim=0) 
+
+            # forward 
+            emb_2x = model(cells)
+
+            # reshape tensor
+            # (2*bsz, n_features) => (bsz, 2, features)
+            bsz = cells1.shape[0]
+            f1, f2 = torch.split(emb_2x, [bsz, bsz], dim=0)  # (bsz, conhead_dim)
+            features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
+
+            loss = criterion(features)  # (bsz, 2, conhead_dim)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # update record
+            step_count += 1
+            loss_sum += loss.cpu().item()
+            loss_avg = loss_sum / step_count
+
+            tepoch.set_postfix(loss=loss_avg)
+
+    return loss_avg
+
+def adjust_learning_rate(optimizer, epoch, lr, cos=False, schedule=[10]):
+    """Decay the learning rate based on schedule"""
+    # lr = args.lr
+    if cos:  # cosine lr schedule
+        lr *= 0.5 * (1. + math.cos(math.pi * epoch / args.epochs))
+    else:  # stepwise lr schedule
+        for milestone in schedule:
+            lr *= 0.1 if epoch >= milestone else 1.
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr

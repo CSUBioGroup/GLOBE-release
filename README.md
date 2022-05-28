@@ -35,7 +35,7 @@ All raw datasets used in our paper can be found in:
 Some of data used in our experiments can be found in [`data`](data/). Complete data can be found in [`zenodo`](https://zenodo.org/record/6395618)
 
 ## Usage
-We provided some demos ([`Simulation, PBMC, Cell Line, Pancreas, Neocortex`](demo/)) to demonstrate usage of GLOBE. Following is a brief decription of usage of GLOBE. 
+We provided some demos ([`Simulation, PBMC, Cell Line, Pancreas, Neocortex`](demo/)) to demonstrate usage of GLOBE. Following is a brief decription.
 
 ### Build Dataset and Model
 ```Python
@@ -55,7 +55,11 @@ We provided some demos ([`Simulation, PBMC, Cell Line, Pancreas, Neocortex`](dem
 
     # init model
     globe = GLOBE(
+<<<<<<< Updated upstream
             mode='unsupervised',    # default
+=======
+            mode='unsupervised-GLOBE',    # default
+>>>>>>> Stashed changes
             exp_id='Pancreas_v1',   # used for creating logs
             gpu='0',              
         )
